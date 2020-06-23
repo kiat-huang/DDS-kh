@@ -9,6 +9,7 @@
 # python3 -m unittest discover
 
 import unittest
+import threading
 
 from test.utilities import nesw_to_dds_format
 from test.utilities import rotate_nesw_to_eswn
@@ -188,6 +189,51 @@ class TestDDS(unittest.TestCase):
 
         self.assertEqual(0, dds_table['S']['N'], 'South can take no tricks at notrump')
         self.assertEqual(1, dds_table['S']['N'], 'South can take one tricks at diamonds')
+
+    def test_parallel_CalcDDTable(self):
+        """
+        Tests parallel access to calcDDTable. Cards are from libdds/hands/largest.txt
+
+        PBN 0 3 4 0 "N:T7.KT7.8752.AQ52 AQ9654..AT6.9863 K832.QJ964.KJ9.4 J.A8532.Q43.KJT7"
+        FUT 12 2 2 2 3 1 1 1 0 0 3 3 3 2 5 8 14 7 10 13 7 10 2 5 12 0 0 128 0 0 0 0 0 0 0 0 0 7 7 7 7 7 7 7 6 6 6 6 5
+        TABLE 5 8 5 8  8 5 8 5  6 7 6 7  4 9 4 9  6 6 6 6
+        PAR "NS -100" "EW 100" "NS:NS 3Hx" "EW:NS 3Hx"
+        """
+
+        nesw = [
+            "T7.KT7.8752.AQ52",
+            "AQ9654..AT6.9863",
+            "K832.QJ964.KJ9.4",
+            "J.A8532.Q43.KJT7"
+        ]
+
+        result = dict(
+            N = dict(N = 5, E = 8, S = 5, W = 8),
+            S = dict(N = 8, E = 5, S = 8, W = 4),
+            H = dict(N = 6, E = 7, S = 6, W = 7),
+            D = dict(N = 4, E = 9, S = 4, W = 9),
+            C = dict(N = 6, E = 6, S = 6, W = 6)
+        )
+
+        hands1 = nesw_to_dds_format(nesw)
+        hands2 = nesw_to_dds_format(nesw)
+
+        def test_fn(self, hands):
+            dds_table = ""
+            for i in range(10):
+                dds_table = self.dds.calc_dd_table(hands)
+            return dds_table
+
+        t2 = threading.Thread(target=test_fn, args=(self, hands1))
+        t2.start()
+        dds_table = test_fn(self, hands2)
+        t2.join()
+
+        for denomination in ['C', 'D', 'H', 'S', 'N']:
+            for declarer in ['N', 'S', 'E', 'W']:
+                self.assertEqual(result[denomination][declarer],
+                        dds_table[denomination][declarer]);
+
 
 if __name__ == '__main__':
     unittest.main()
