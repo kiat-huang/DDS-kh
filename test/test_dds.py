@@ -208,11 +208,11 @@ class TestDDS(unittest.TestCase):
         ]
 
         result = dict(
-            N = dict(N = 5, E = 8, S = 5, W = 8),
-            S = dict(N = 8, E = 5, S = 8, W = 4),
-            H = dict(N = 6, E = 7, S = 6, W = 7),
-            D = dict(N = 4, E = 9, S = 4, W = 9),
-            C = dict(N = 6, E = 6, S = 6, W = 6)
+            S = dict(N = 5, E = 8, S = 5, W = 8),
+            H = dict(N = 8, E = 5, S = 8, W = 5),
+            D = dict(N = 6, E = 7, S = 6, W = 7),
+            C = dict(N = 4, E = 9, S = 4, W = 9),
+            N = dict(N = 6, E = 6, S = 6, W = 6)
         )
 
         hands1 = nesw_to_dds_format(nesw)
@@ -232,8 +232,10 @@ class TestDDS(unittest.TestCase):
         for denomination in ['C', 'D', 'H', 'S', 'N']:
             for declarer in ['N', 'S', 'E', 'W']:
                 self.assertEqual(result[denomination][declarer],
-                        dds_table[denomination][declarer]);
-
+                        dds_table[denomination][declarer],
+                        declarer + ' should make ' + \
+                                str(result[denomination][declarer]) + ' in ' + \
+                                denomination);
 
 if __name__ == '__main__':
     unittest.main()
