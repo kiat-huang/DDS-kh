@@ -2,6 +2,7 @@
 
 from ctypes import Structure, c_int, pointer
 import platform
+import threading
 
 if platform.system() == "Windows":
     from ctypes import windll as libloader
@@ -13,6 +14,8 @@ SUITS = "SHDC"
 STRAINS = SUITS + "N"
 RANKS = "??23456789TJQKA"
 MAXNOOFBOARDS = 200
+
+libdds_mutex = threading.Lock()
 
 class Deal(Structure):
     _fields_ = [
@@ -99,7 +102,11 @@ class DDS:
         dl = Deal(trump, first, current_trick_suit, current_trick_rank, remain_cards)
         fut = FutureTricks()
 
+        global libdds_mutex
+        libdds_mutex.acquire()
         code = self.libdds.SolveBoard(dl, target, solutions, mode, pointer(fut), thread_index)
+        libdds_mutex.release()
+
         if code != 1:
             raise DDSError(code)
 
@@ -115,7 +122,11 @@ class DDS:
         table_deal = DDtable_deal(cards)
         table = DDTableResults()
 
+        global libdds_mutex
+        libdds_mutex.acquire()
         code = self.libdds.CalcDDtable(table_deal, pointer(table))
+        libdds_mutex.release()
+
         if code != 1:
             raise DDSError(code)
 

@@ -1,3 +1,5 @@
+import threading
+
 from flask import Flask, request
 from flask_cors import CORS
 from flask_restful import Resource, Api
@@ -8,6 +10,7 @@ app = Flask(__name__)
 CORS(app)
 api = Api(app)
 
+dds_mutex = threading.Lock()
 
 class DDSTable(Resource):
     def get(self):
@@ -18,8 +21,14 @@ class DDSTable(Resource):
         data = request.get_json()
         # Verify the data here
         # self.verifyinput(data)
+        
+        global dds_mutex
+        
+        dds_mutex.acquire()
         dds = DDS(max_threads=2)
-        dds_table = dds.calc_dd_table(data['hands'])
+        dds_table = dds.calc_dd_table(data['hands'])       
+        dds_mutex.release()
+        
         return dds_table
 
 class DDSScore(Resource):
